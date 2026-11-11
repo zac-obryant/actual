@@ -1,13 +1,16 @@
 // @ts-strict-ignore
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { ComponentProps } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { Trans } from 'react-i18next';
 import { AutoSizer } from 'react-virtualized-auto-sizer';
 
+import { Button } from '@actual-app/components/button';
 import { View } from '@actual-app/components/view';
 import * as monthUtils from '@actual-app/core/shared/months';
 
+import { BillsAndSpending } from '#components/custom/BillsAndSpending';
 import {
   BUDGET_RAIL_GAP,
   BUDGET_RAIL_WIDTH,
@@ -100,6 +103,11 @@ const DynamicBudgetTable = ({
     setDisplayMax(numPossible);
   }, [setDisplayMax, numPossible]);
 
+  // Fork: the tracking budget reads as "Bills and spending", one month at a
+  // time; the stock grid stays one click away for editing planned amounts.
+  const [editingPlan, setEditingPlan] = useState(false);
+  const [shownMonth, setShownMonth] = useState(focusMonth);
+
   function getValidMonth(month) {
     const start = monthBounds.start;
     const end = monthUtils.subMonths(monthBounds.end, numMonths - 1);
@@ -171,6 +179,46 @@ const DynamicBudgetTable = ({
     [onBudgetAction, startMonth, isGoalTemplatesEnabled],
   );
 
+  if (type === 'tracking' && !editingPlan) {
+    return (
+      <View style={{ width, height, overflowY: 'auto', alignItems: 'center' }}>
+        <View
+          style={{
+            width: '100%',
+            maxWidth: INSTRUMENT_SINGLE_MONTH_MAX_WIDTH,
+            padding: '26px 16px 60px',
+            flexShrink: 0,
+          }}
+        >
+          <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
+            <MonthPicker
+              startMonth={shownMonth}
+              numDisplayed={1}
+              monthBounds={monthBounds}
+              variant="strip"
+              style={{ marginBottom: 22 }}
+              onSelect={month =>
+                setShownMonth(
+                  month < monthBounds.start
+                    ? monthBounds.start
+                    : month > monthBounds.end
+                      ? monthBounds.end
+                      : month,
+                )
+              }
+            />
+            <BillsAndSpending month={shownMonth} />
+            <View style={{ alignItems: 'flex-start', marginTop: 30 }}>
+              <Button variant="bare" onPress={() => setEditingPlan(true)}>
+                <Trans>Plan a category that isn't listed (classic grid)</Trans>
+              </Button>
+            </View>
+          </ErrorBoundary>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View
       style={{
@@ -195,6 +243,13 @@ const DynamicBudgetTable = ({
       >
         <View style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
           <ErrorBoundary FallbackComponent={FeatureErrorFallback}>
+            {type === 'tracking' && (
+              <View style={{ alignItems: 'flex-start', padding: '10px 0' }}>
+                <Button onPress={() => setEditingPlan(false)}>
+                  <Trans>Back to bills and spending</Trans>
+                </Button>
+              </View>
+            )}
             {!isInstrument && (
               <BudgetPageHeader
                 startMonth={prewarmStartMonth}

@@ -163,7 +163,7 @@ function AccountsBreakdown() {
 }
 
 /** Where the receipts app lives: the same box, its own port. */
-function receiptsUrl(path: string) {
+export function receiptsUrl(path: string) {
   return `${window.location.protocol}//${window.location.hostname}:8787${path}`;
 }
 
