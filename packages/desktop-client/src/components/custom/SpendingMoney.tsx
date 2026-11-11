@@ -180,73 +180,95 @@ export function SpendingMoney({ plan }: { plan: PlanSummary }) {
             {next.name}{' '}
             <span style={{ color: theme.noticeText }}>+{usd(next.amount)}</span>
           </Text>
-          {[
-            [t('Tithe'), next.tithe],
+          {(
             [
-              t('Move to {{account}}', {
-                account: plan.billsAccount ?? t('the bills account'),
-              }),
-              next.toBills,
-            ],
-            [t('Move to savings for goals'), next.toSavings],
-            [
-              t('Family spending, {{weeks}} weeks', { weeks: next.weeks }),
-              next.spending,
-            ],
-            [
-              t('Extra to {{debt}}', { debt: plan.snowball ?? t('debt') }),
-              next.extraDebt,
-            ],
-          ]
-            .filter(([, v]) => (v as number) > 0)
-            .map(([name, v], i) => (
+              [t('Tithe'), next.tithe, null],
+              [
+                t('Family spending, {{weeks}} weeks', { weeks: next.weeks }),
+                next.spending,
+                null,
+              ],
+              [
+                t('Move to {{account}}', {
+                  account: plan.billsAccount ?? t('the bills account'),
+                }),
+                next.toBills,
+                next.bills
+                  .map(b =>
+                    b.late ? t('{{name}} (late)', { name: b.name }) : b.name,
+                  )
+                  .join(', '),
+              ],
+              [
+                t('Of that, from what is already in checking'),
+                next.fromChecking,
+                null,
+              ],
+              [t('Move to savings for goals'), next.toSavings, null],
+              [
+                t('Extra to {{debt}}', { debt: plan.snowball ?? t('debt') }),
+                next.extraDebt,
+                null,
+              ],
+              [t('Leave in checking as a cushion'), next.keep, null],
+            ] as [string, number, string | null][]
+          )
+            .filter(([, v]) => v > 0)
+            .map(([name, v, note], i) => (
               <View
-                key={String(name)}
+                key={name}
                 style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  gap: 12,
                   padding: '9px 0',
                   borderTop: i ? `1px solid ${theme.tableBorder}` : 'none',
                 }}
               >
-                <Text style={{ fontSize: 15 }}>{name}</Text>
-                <Text style={{ ...styles.tnum, fontSize: 15, fontWeight: 600 }}>
-                  {usd(v as number)}
-                </Text>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 15 }}>{name}</Text>
+                  <Text
+                    style={{ ...styles.tnum, fontSize: 15, fontWeight: 600 }}
+                  >
+                    {usd(v)}
+                  </Text>
+                </View>
+                {note && (
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      color: theme.pageTextSubdued,
+                      marginTop: 2,
+                    }}
+                  >
+                    {note}
+                  </Text>
+                )}
               </View>
             ))}
-          {routine && (
+          {routine && routine.billsLow.bal < 0 && (
             <Text
-              style={{
-                fontSize: 13,
-                color: theme.pageTextSubdued,
-                marginTop: 10,
-              }}
+              style={{ fontSize: 13, color: theme.errorText, marginTop: 10 }}
             >
-              {routine.billsLow.bal >= 0
-                ? t(
-                    'The same moves every payday. With them, {{account}} never drops below {{amount}} in the next six months.',
-                    {
-                      account: plan.billsAccount ?? t('the bills account'),
-                      amount: usd(routine.billsLow.bal),
-                    },
-                  )
-                : t(
-                    '{{account}} would run {{amount}} short on {{date}}. Move that much extra on an earlier payday.',
-                    {
-                      account: plan.billsAccount ?? t('the bills account'),
-                      amount: usd(-routine.billsLow.bal),
-                      date: fmt(routine.billsLow.date, 'MMM d'),
-                    },
-                  )}
+              {t(
+                '{{account}} runs {{amount}} short on {{date}}. Move that much from checking before then.',
+                {
+                  account: plan.billsAccount ?? t('the bills account'),
+                  amount: usd(-routine.billsLow.bal),
+                  date: fmt(routine.billsLow.date, 'MMM d'),
+                },
+              )}
             </Text>
           )}
           <Text
             style={{ fontSize: 13, color: theme.pageTextSubdued, marginTop: 6 }}
           >
             <Trans>
-              Your phone gets these moves the evening before each payday.
+              The bills account gets just what the bills before the next payday
+              need. Your phone gets these moves the evening before each payday.
             </Trans>
           </Text>
         </View>

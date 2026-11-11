@@ -299,6 +299,17 @@ export function BillsAndSpending({ month }: { month: string }) {
   const dueDay = (r: Row) => plan?.due[r.name]?.[0];
   const billStatus = (r: Row): { tone: Tone; label: string } => {
     if (isPaid(r)) return { tone: 'positive', label: t('Paid') };
+    // the Money Plan's own pay day for this month's bill, when it differs from the due date
+    const pay = plan?.payments?.find(
+      p => p.name === r.name && p.due.slice(0, 7) === month,
+    );
+    if (pay && (pay.late || pay.on !== pay.due)) {
+      const on = monthUtils.format(pay.on, 'MMM d', locale);
+      if (pay.late) {
+        return { tone: 'negative', label: t('Pay {{on}} · late fee', { on }) };
+      }
+      return { tone: 'warning', label: t('Pay by {{on}}', { on }) };
+    }
     const d = dueDay(r);
     if (d == null) return { tone: 'neutral', label: t('Monthly') };
     if (d < today) {

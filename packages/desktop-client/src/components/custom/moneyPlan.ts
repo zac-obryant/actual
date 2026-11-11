@@ -38,6 +38,7 @@ export type PlanSummary = {
   cashAccounts?: string[];
   days?: PlanDay[];
   routine?: PaydayRoutine;
+  payments?: PlanPayment[];
   billsAccount?: string | null;
   snowball?: string | null;
   spending?: {
@@ -59,10 +60,22 @@ export type PaydaySplit = {
   spending: number;
   extraDebt: number;
   weeks: number;
+  /** Left in checking as a cushion. */
+  keep: number;
+  /** Bills this paycheck can't cover, taken from what's already in checking. */
+  fromChecking: number;
+  bills: { name: string; amount: number; on: string; late: boolean }[];
+};
+/** A bill the plan pays: the day it's paid, the day it was due, and whether that's past its grace. */
+export type PlanPayment = {
+  name: string;
+  amount: number;
+  on: string;
+  due: string;
+  late: boolean;
 };
 export type PaydayRoutine = {
   perWeek: number;
-  billsMonthly: number;
   goalsMonthly: number;
   splits: PaydaySplit[];
   billsLow: { date: string; bal: number };
