@@ -284,7 +284,8 @@ export function AccountHeader({
         <RegisterHero
           accountId={accountId}
           balanceQuery={balanceQuery}
-          showChart={showNetWorthChart}
+          // fork: no history chart above the register; the list needs the room
+          showChart={false}
           showExtraBalances={showExtraBalances}
           onToggleExtraBalances={onToggleExtraBalances}
           label={
@@ -542,12 +543,6 @@ export function AccountHeader({
                             : []),
                           { name: 'export', text: t('Export') },
                           {
-                            name: 'toggle-net-worth-chart',
-                            text: showNetWorthChart
-                              ? t('Hide balance chart')
-                              : t('Show balance chart'),
-                          },
-                          {
                             name: 'manage-columns',
                             text: t('Manage table columns'),
                           },
@@ -758,7 +753,6 @@ function AccountMenu({
   account,
   onImport,
   canSync,
-  showNetWorthChart,
   showReconciled,
   isSorted,
   onMenuSelect,
@@ -789,12 +783,6 @@ function AccountMenu({
               } as const,
             ]
           : []),
-        {
-          name: 'toggle-net-worth-chart',
-          text: showNetWorthChart
-            ? t('Hide balance chart')
-            : t('Show balance chart'),
-        },
         {
           name: 'manage-columns',
           text: t('Manage table columns'),

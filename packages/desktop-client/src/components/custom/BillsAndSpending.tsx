@@ -36,6 +36,7 @@ import {
   StatusChip,
 } from './primitives';
 import type { Tone } from './primitives';
+import { SpendingMoney } from './SpendingMoney';
 
 type Row = { id: string; name: string; planned: number; spent: number };
 
@@ -363,34 +364,61 @@ export function BillsAndSpending({ month }: { month: string }) {
 
   return (
     <View style={{ flexShrink: 0 }}>
-      <HeroNumber color={evLeft < 0 ? theme.errorText : theme.pageText}>
-        {evLeft < 0
-          ? t('{{amount}} over', { amount: money(-evLeft) })
-          : t('{{amount}} left', { amount: money(evLeft) })}
-      </HeroNumber>
-      <Text
-        style={{ fontSize: 15, color: theme.pageTextSubdued, marginTop: 4 }}
-      >
-        {t(
-          'to spend on everyday things in {{month}}. Bills are already set aside. Percentages are of {{income}} planned income. Click any underlined amount to change it from {{month}} on.',
-          { month: monthName, income: money(income) },
-        )}
-      </Text>
-      {evLeft > 0 && daysLeft > 0 && (
-        <Text
-          style={{
-            ...styles.tnum,
-            fontSize: 17,
-            fontWeight: 600,
-            marginTop: 10,
-          }}
-        >
-          {t('About {{day}} a day, or {{week}} a week, until {{month}} ends.', {
-            day: money(evLeft / daysLeft),
-            week: money(Math.min(evLeft, (evLeft / daysLeft) * 7)),
-            month: monthName,
-          })}
-        </Text>
+      {month === thisMonth && plan?.routine ? (
+        <>
+          <SpendingMoney plan={plan} />
+          <Text
+            style={{
+              fontSize: 14,
+              color: theme.pageTextSubdued,
+              marginTop: 18,
+            }}
+          >
+            {t(
+              'For all of {{month}}: {{amount}} of everyday money left. Percentages are of {{income}} planned income. Click any underlined amount to change it from {{month}} on.',
+              {
+                month: monthName,
+                amount: money(evLeft),
+                income: money(income),
+              },
+            )}
+          </Text>
+        </>
+      ) : (
+        <>
+          <HeroNumber color={evLeft < 0 ? theme.errorText : theme.pageText}>
+            {evLeft < 0
+              ? t('{{amount}} over', { amount: money(-evLeft) })
+              : t('{{amount}} left', { amount: money(evLeft) })}
+          </HeroNumber>
+          <Text
+            style={{ fontSize: 15, color: theme.pageTextSubdued, marginTop: 4 }}
+          >
+            {t(
+              'to spend on everyday things in {{month}}. Bills are already set aside. Percentages are of {{income}} planned income. Click any underlined amount to change it from {{month}} on.',
+              { month: monthName, income: money(income) },
+            )}
+          </Text>
+          {evLeft > 0 && daysLeft > 0 && (
+            <Text
+              style={{
+                ...styles.tnum,
+                fontSize: 17,
+                fontWeight: 600,
+                marginTop: 10,
+              }}
+            >
+              {t(
+                'About {{day}} a day, or {{week}} a week, until {{month}} ends.',
+                {
+                  day: money(evLeft / daysLeft),
+                  week: money(Math.min(evLeft, (evLeft / daysLeft) * 7)),
+                  month: monthName,
+                },
+              )}
+            </Text>
+          )}
+        </>
       )}
 
       <div className={lanes}>

@@ -113,6 +113,9 @@ type Props = {
   onLoadMore: () => void;
   onRefetch: () => void;
   onShowClassic: () => void;
+  /** The page's own "Add transaction" was pressed. */
+  adding: boolean;
+  onAddHandled: () => void;
 };
 
 export function FocusRegister({
@@ -127,6 +130,8 @@ export function FocusRegister({
   onLoadMore,
   onRefetch,
   onShowClassic,
+  adding,
+  onAddHandled,
 }: Props) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -136,6 +141,12 @@ export function FocusRegister({
   const rows = transactions.filter(tx => !tx.is_child);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  useEffect(() => {
+    if (adding) {
+      setCreating(true);
+      onAddHandled();
+    }
+  }, [adding, onAddHandled]);
   const selected = creating
     ? null
     : (rows.find(r => r.id === selectedId) ?? rows[0] ?? null);

@@ -37,6 +37,35 @@ export type PlanSummary = {
   debts: PlanDebt[];
   cashAccounts?: string[];
   days?: PlanDay[];
+  routine?: PaydayRoutine;
+  billsAccount?: string | null;
+  snowball?: string | null;
+  spending?: {
+    categories: string[];
+    monthly: number;
+    perWeek: number;
+    lastPayday: string | null;
+    nextPayday: string | null;
+  };
+};
+/** One payday's moves, in dollars. */
+export type PaydaySplit = {
+  date: string;
+  name: string;
+  amount: number;
+  tithe: number;
+  toBills: number;
+  toSavings: number;
+  spending: number;
+  extraDebt: number;
+  weeks: number;
+};
+export type PaydayRoutine = {
+  perWeek: number;
+  billsMonthly: number;
+  goalsMonthly: number;
+  splits: PaydaySplit[];
+  billsLow: { date: string; bal: number };
 };
 
 /** `undefined` while asking, `null` when the plan can't be reached. */

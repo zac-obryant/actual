@@ -18,7 +18,7 @@ import { useLocale } from '#hooks/useLocale';
 
 import { CashLine } from './CashLine';
 import { lowPoint, usd, usePlan } from './moneyPlan';
-import type { PlanDay } from './moneyPlan';
+import type { PaydaySplit, PlanDay } from './moneyPlan';
 import { HeroNumber, instrumentPage } from './primitives';
 
 const WEEKS = 7;
@@ -233,16 +233,21 @@ export function CashCalendar() {
               );
             })}
           </div>
-          <DayDetail date={selected} day={byDate.get(selected)} today={today} />
+          <DayDetail
+            date={selected}
+            day={byDate.get(selected)}
+            today={today}
+            split={plan?.routine?.splits.find(sp => sp.date === selected)}
+            billsAccount={plan?.billsAccount ?? null}
+          />
         </div>
         <Text
           style={{ fontSize: 13, color: theme.pageTextSubdued, marginTop: 14 }}
         >
-          <Trans>
-            Green dot: payday. Bar: a bill, longer means bigger. Small number:
-            expected balance at the end of the day, after everyday spending and
-            before any extra debt payments.
-          </Trans>
+          {t(
+            'Green dot: payday. Bar: a bill, longer means bigger. Small number: what all your SoFi accounts together should hold at the end of the day. Moving money between them on payday does not change it; family spending money ({{week}} a week) comes out a little each day, and extra debt payments are not taken out.',
+            { week: usd(plan?.routine?.perWeek ?? 0) },
+          )}
         </Text>
       </View>
     </Page>
@@ -253,10 +258,14 @@ function DayDetail({
   date,
   day,
   today,
+  split,
+  billsAccount,
 }: {
   date: string;
   day: PlanDay | undefined;
   today: string;
+  split?: PaydaySplit;
+  billsAccount: string | null;
 }) {
   const { t } = useTranslation();
   const locale = useLocale();
@@ -317,6 +326,52 @@ function DayDetail({
           </View>
         ))}
       </View>
+      {split && (
+        <View
+          style={{
+            marginTop: 16,
+            backgroundColor: theme.surfaceSunken,
+            borderRadius: 12,
+            padding: 14,
+            gap: 6,
+          }}
+        >
+          <Text style={{ fontWeight: 600 }}>
+            <Trans>Payday moves</Trans>
+          </Text>
+          {[
+            [t('Tithe'), split.tithe],
+            [
+              t('To {{account}}', { account: billsAccount ?? t('bills') }),
+              split.toBills,
+            ],
+            [t('To savings for goals'), split.toSavings],
+            [
+              t('Family spending, {{weeks}} weeks', { weeks: split.weeks }),
+              split.spending,
+            ],
+            [t('Extra to debt'), split.extraDebt],
+          ]
+            .filter(([, v]) => (v as number) > 0)
+            .map(([name, v]) => (
+              <View
+                key={String(name)}
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                }}
+              >
+                <Text style={{ fontSize: 14, color: theme.pageTextSubdued }}>
+                  {name}
+                </Text>
+                <Text style={{ ...styles.tnum, fontSize: 14, fontWeight: 600 }}>
+                  {usd(v as number)}
+                </Text>
+              </View>
+            ))}
+        </View>
+      )}
     </View>
   );
 }
