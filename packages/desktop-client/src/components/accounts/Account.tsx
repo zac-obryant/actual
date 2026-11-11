@@ -10,6 +10,7 @@ import { ErrorBoundary } from 'react-error-boundary';
 import { Trans } from 'react-i18next';
 import { Navigate, useLocation, useParams } from 'react-router';
 
+import { Button } from '@actual-app/components/button';
 import { styles } from '@actual-app/components/styles';
 import { theme } from '@actual-app/components/theme';
 import { View } from '@actual-app/components/view';
@@ -53,6 +54,7 @@ import type {
   TransactionTableColumn,
   TransactionTableColumnId,
 } from '#components/transactions/table/columns';
+import { FocusRegister } from '#components/custom/FocusRegister';
 import { TransactionList } from '#components/transactions/TransactionList';
 import { validateAccountName } from '#components/util/accountValidation';
 import { useAccountPreviewTransactions } from '#hooks/useAccountPreviewTransactions';
@@ -190,6 +192,16 @@ function AllTransactions({
   return children(allTransactions, allBalances);
 }
 
+// ponytail: a per-device choice, so localStorage rather than a synced pref
+const CLASSIC_KEY = 'fork-register-classic';
+function readClassicPref() {
+  try {
+    return localStorage.getItem(CLASSIC_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 function getField(field?: string) {
   if (!field) {
     return 'date';
@@ -282,6 +294,8 @@ type AccountInternalState = {
   showReconciled: boolean;
   nameError: string;
   isAdding: boolean;
+  /** Fork: the classic table instead of the Focus register. */
+  classic: boolean;
   modalShowing?: boolean;
   sort: {
     ascDesc: 'asc' | 'desc';
@@ -332,6 +346,7 @@ class AccountInternal extends PureComponent<
       showReconciled: props.showReconciled,
       nameError: '',
       isAdding: false,
+      classic: readClassicPref(),
       sort: null,
       filteredAmount: null,
     };
@@ -450,6 +465,15 @@ class AccountInternal extends PureComponent<
       t.subtransactions?.forEach(sub => arr.push(sub.id));
       return arr;
     }, []);
+  };
+
+  setClassic = (classic: boolean) => {
+    try {
+      localStorage.setItem(CLASSIC_KEY, classic ? '1' : '0');
+    } catch {
+      // private mode: the choice just doesn't stick
+    }
+    this.setState({ classic });
   };
 
   refetchTransactions = async () => {
@@ -1899,6 +1923,28 @@ class AccountInternal extends PureComponent<
                 onMergeTransactions={this.onMergeTransactions}
               />
 
+              {this.state.classic ? (
+                <View style={{ alignItems: 'flex-start', padding: '0 0 8px 20px' }}>
+                  <Button variant="bare" onPress={() => this.setClassic(false)}>
+                    <Trans>Back to focus view</Trans>
+                  </Button>
+                </View>
+              ) : null}
+              {!this.state.classic ? (
+                <FocusRegister
+                  transactions={transactions}
+                  accounts={accounts}
+                  payees={payees}
+                  categoryGroups={categoryGroups}
+                  accountId={accountId}
+                  sort={this.state.sort}
+                  isFiltered={!!transactionsFiltered}
+                  onSort={this.onSort}
+                  onLoadMore={() => this.paged && this.paged.fetchNext()}
+                  onRefetch={this.refetchTransactions}
+                  onShowClassic={() => this.setClassic(true)}
+                />
+              ) : (
               <View style={{ flex: 1 }}>
                 <TransactionList
                   headerContent={undefined}
@@ -1978,6 +2024,7 @@ class AccountInternal extends PureComponent<
                   onApplyFilter={this.onApplyFilter}
                 />
               </View>
+              )}
             </View>
           </SelectedProviderWithItems>
         )}
