@@ -8,7 +8,7 @@
 // dates come from the companion's Money Plan (`/plan.json` on the receipts
 // server, same box). Without it the bills and spending still show; the plan
 // sections say why they are empty.
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
@@ -26,6 +26,8 @@ import { useCategories } from '#hooks/useCategories';
 import { useLocale } from '#hooks/useLocale';
 
 import { cell, useCells } from './EnvelopeRowParts';
+import { usePlan } from './moneyPlan';
+import type { PlanSummary } from './moneyPlan';
 import {
   Direction,
   HeroNumber,
@@ -34,49 +36,6 @@ import {
   StatusChip,
 } from './primitives';
 import type { Tone } from './primitives';
-import { receiptsUrl } from './TopNav';
-
-type PlanGoal = {
-  name: string;
-  target: number;
-  by: string | null;
-  current: number;
-  monthly: number;
-  date: string | null;
-};
-type PlanDebt = {
-  name: string;
-  start: number;
-  asOf: string;
-  current: number;
-  apr: number;
-  monthly: number;
-  date: string | null;
-};
-type PlanSummary = {
-  generated: string;
-  due: Record<string, [number, number?]>;
-  everyday: string[];
-  bills: string[];
-  goals: PlanGoal[];
-  debts: PlanDebt[];
-};
-
-/** `undefined` while asking, `null` when the plan can't be reached. */
-function usePlan() {
-  const [plan, setPlan] = useState<PlanSummary | null | undefined>(undefined);
-  useEffect(() => {
-    let live = true;
-    fetch(receiptsUrl('/plan.json'), { credentials: 'include' })
-      .then(r => (r.ok ? r.json() : null))
-      .then(body => live && setPlan(body))
-      .catch(() => live && setPlan(null));
-    return () => {
-      live = false;
-    };
-  }, []);
-  return plan;
-}
 
 type Row = { id: string; name: string; planned: number; spent: number };
 
@@ -236,7 +195,9 @@ function PlannedAmount({
         onUpdate={value => {
           setEditing(false);
           const dollars = parseFloat(value.replace(/[^0-9.]/g, ''));
-          const cents = Number.isFinite(dollars) ? Math.round(dollars * 100) : 0;
+          const cents = Number.isFinite(dollars)
+            ? Math.round(dollars * 100)
+            : 0;
           if (cents !== row.planned) void savePlanned(month, row.id, cents);
         }}
         style={{ ...styles.tnum, width: 96, textAlign: 'right' }}
@@ -415,6 +376,22 @@ export function BillsAndSpending({ month }: { month: string }) {
           { month: monthName, income: money(income) },
         )}
       </Text>
+      {evLeft > 0 && daysLeft > 0 && (
+        <Text
+          style={{
+            ...styles.tnum,
+            fontSize: 17,
+            fontWeight: 600,
+            marginTop: 10,
+          }}
+        >
+          {t('About {{day}} a day, or {{week}} a week, until {{month}} ends.', {
+            day: money(evLeft / daysLeft),
+            week: money(Math.min(evLeft, (evLeft / daysLeft) * 7)),
+            month: monthName,
+          })}
+        </Text>
+      )}
 
       <div className={lanes}>
         <View>

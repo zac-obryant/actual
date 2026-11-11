@@ -289,9 +289,6 @@ export function TopNav() {
           <Tab to="/reports">
             <Trans>Reports</Trans>
           </Tab>
-          <Tab to="/schedules">
-            <Trans>Schedules</Trans>
-          </Tab>
           {/* fork: custom pages */}
           <Tab to="/calendar">
             <Trans>Calendar</Trans>

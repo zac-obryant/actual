@@ -26,7 +26,7 @@ import { BankSyncStatus } from './BankSyncStatus';
 import { CommandBar } from './CommandBar';
 import { ContextMenu } from './ContextMenu';
 import { BalancesPage } from './custom/BalancesPage';
-import { CalendarPage } from './custom/CalendarPage';
+import { CashCalendar } from './custom/CashCalendar';
 import { ForecastPage } from './custom/ForecastPage';
 import { TopNav } from './custom/TopNav';
 import { EnableBankingCallback } from './EnableBankingCallback';
@@ -262,7 +262,7 @@ export function FinancesApp() {
 
                     {/* fork: custom pages (see components/custom/) */}
                     <Route path="/balances" element={<BalancesPage />} />
-                    <Route path="/calendar" element={<CalendarPage />} />
+                    <Route path="/calendar" element={<CashCalendar />} />
                     <Route path="/forecast" element={<ForecastPage />} />
 
                     <Route
