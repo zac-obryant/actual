@@ -35,7 +35,14 @@ const card = {
   padding: 22,
 };
 
-export function SpendingMoney({ plan }: { plan: PlanSummary }) {
+export function SpendingMoney({
+  plan,
+  compact = false,
+}: {
+  plan: PlanSummary;
+  /** just the week's number and meter, for the calendar */
+  compact?: boolean;
+}) {
   const { t } = useTranslation();
   const locale = useLocale();
   const { data: { list = [] } = {} } = useCategories();
@@ -91,54 +98,65 @@ export function SpendingMoney({ plan }: { plan: PlanSummary }) {
   const fmt = (d: string, f: string) => monthUtils.format(d, f, locale);
   const next = routine?.splits.find(s => s.date > today);
   const startsOn = fmt(monthUtils.addDays(weekEnd, 1), 'EEEE');
+  const covers =
+    cats
+      .slice(0, 5)
+      .map(c => c.name)
+      .join(', ') + (cats.length > 5 ? '…' : '');
+
+  const week = (
+    <View>
+      <HeroNumber color={left < 0 ? theme.errorText : theme.pageText}>
+        {left < 0
+          ? t('{{amount}} over', { amount: usd(-left) })
+          : t('{{amount}} left', { amount: usd(left) })}
+      </HeroNumber>
+      <Text
+        style={{
+          ...styles.tnum,
+          fontSize: 15,
+          color: theme.pageTextSubdued,
+          marginTop: 6,
+        }}
+      >
+        {t('This week, {{from}} – {{to}}', {
+          from: fmt(weekStart, 'MMM d'),
+          to: fmt(weekEnd, 'MMM d'),
+        })}
+        {': '}
+        {perWeek < planned
+          ? t(
+              '{{week}} for {{covers}}. The usual {{planned}} a week is not in the bank until the paycheck.',
+              { week: usd(perWeek), covers, planned: usd(planned) },
+            )
+          : t('{{week}} for {{covers}}. A fresh {{week}} starts {{day}}.', {
+              week: usd(perWeek),
+              covers,
+              day: startsOn,
+            })}
+      </Text>
+      <Meter
+        percent={perWeek ? (spent / perWeek) * 100 : 0}
+        color={
+          left < 0
+            ? theme.errorBorder
+            : spent / (perWeek || 1) > 0.85
+              ? theme.warningBorder
+              : theme.reportsChartFill
+        }
+        height={10}
+        style={{ flex: 'none', margin: '14px 0 16px' }}
+      />
+    </View>
+  );
+  if (compact) {
+    return week;
+  }
 
   return (
     <div className={split}>
       <View>
-        <HeroNumber color={left < 0 ? theme.errorText : theme.pageText}>
-          {left < 0
-            ? t('{{amount}} over', { amount: usd(-left) })
-            : t('{{amount}} left', { amount: usd(left) })}
-        </HeroNumber>
-        <Text
-          style={{
-            ...styles.tnum,
-            fontSize: 15,
-            color: theme.pageTextSubdued,
-            marginTop: 6,
-          }}
-        >
-          {perWeek < planned
-            ? t(
-                'for food and everything else, {{from}} – {{to}}. The usual {{planned}} a week is not in the bank until the paycheck.',
-                {
-                  from: fmt(weekStart, 'MMM d'),
-                  to: fmt(weekEnd, 'MMM d'),
-                  planned: usd(planned),
-                },
-              )
-            : t(
-                'of {{week}} family spending money this week, {{from}} – {{to}}. A new week starts {{day}}.',
-                {
-                  week: usd(perWeek),
-                  from: fmt(weekStart, 'MMM d'),
-                  to: fmt(weekEnd, 'MMM d'),
-                  day: startsOn,
-                },
-              )}
-        </Text>
-        <Meter
-          percent={perWeek ? (spent / perWeek) * 100 : 0}
-          color={
-            left < 0
-              ? theme.errorBorder
-              : spent / (perWeek || 1) > 0.85
-                ? theme.warningBorder
-                : theme.reportsChartFill
-          }
-          height={10}
-          style={{ flex: 'none', margin: '14px 0 16px' }}
-        />
+        {week}
         <View style={{ ...card, padding: '6px 20px' }}>
           {cats.map((c, i) => {
             const share = weekly(c.id);
