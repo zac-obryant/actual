@@ -303,12 +303,20 @@ export function BillsAndSpending({ month }: { month: string }) {
     const pay = plan?.payments?.find(
       p => p.name === r.name && p.due.slice(0, 7) === month,
     );
+    // always lead with the due date; say plainly when the money only comes later
     if (pay && (pay.late || pay.on !== pay.due)) {
+      const due = monthUtils.format(pay.due, 'MMM d', locale);
       const on = monthUtils.format(pay.on, 'MMM d', locale);
       if (pay.late) {
-        return { tone: 'negative', label: t('Pay {{on}} · late fee', { on }) };
+        return {
+          tone: 'negative',
+          label: t('Due {{due}} · paying {{on}}, late fee', { due, on }),
+        };
       }
-      return { tone: 'warning', label: t('Pay by {{on}}', { on }) };
+      return {
+        tone: 'warning',
+        label: t('Due {{due}} · money not there until {{on}}', { due, on }),
+      };
     }
     const d = dueDay(r);
     if (d == null) return { tone: 'neutral', label: t('Monthly') };
