@@ -2,7 +2,7 @@
 // seven weeks. The line is the Money Plan's projected cash; each day in the
 // grid carries only marks (green for money in, a bar per bill sized by amount)
 // and its end-of-day balance. Picking a day on either moves the other.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
@@ -72,6 +72,19 @@ export function CashCalendar() {
   const end = monthUtils.addDays(start, WEEKS * 7 - 1);
   const cells = monthUtils.dayRangeInclusive(start, end);
   const [picked, setPicked] = useState<string | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+  // on a phone the day's detail sits below the grid: bring it into view
+  const pick = (date: string) => {
+    setPicked(date);
+    if (isNarrowWidth) {
+      requestAnimationFrame(() =>
+        detailRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+        }),
+      );
+    }
+  };
   const selected = picked ?? lp?.low.date ?? today;
   const shown = days.filter(d => d.date <= end);
 
@@ -134,7 +147,7 @@ export function CashCalendar() {
               axisEnd={end}
               big
               selected={selected}
-              onSelect={setPicked}
+              onSelect={pick}
             />
           </View>
         )}
@@ -169,7 +182,7 @@ export function CashCalendar() {
                   className={dayCell}
                   aria-pressed={date === selected}
                   aria-label={fmt(date, 'EEEE, MMMM d')}
-                  onClick={() => setPicked(date)}
+                  onClick={() => pick(date)}
                   style={{
                     opacity: past ? 0.38 : 1,
                     backgroundColor:
@@ -183,9 +196,19 @@ export function CashCalendar() {
                   }}
                 >
                   <Text style={{ fontWeight: 600, fontSize: 14 }}>
-                    {date.endsWith('-01')
-                      ? fmt(date, 'MMM d')
-                      : Number(date.slice(8))}
+                    {Number(date.slice(8))}
+                    {date.endsWith('-01') && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 500,
+                          marginLeft: 3,
+                          color: theme.pageTextSubdued,
+                        }}
+                      >
+                        {fmt(date, 'MMM')}
+                      </span>
+                    )}
                   </Text>
                   <View
                     style={{
@@ -227,19 +250,21 @@ export function CashCalendar() {
                       fontWeight: isLow ? 600 : 400,
                     }}
                   >
-                    {d ? usd(d.bal) : ' '}
+                    {d ? (isNarrowWidth ? compact(d.bal) : usd(d.bal)) : ' '}
                   </Text>
                 </button>
               );
             })}
           </div>
-          <DayDetail
-            date={selected}
-            day={byDate.get(selected)}
-            today={today}
-            split={plan?.routine?.splits.find(sp => sp.date === selected)}
-            billsAccount={plan?.billsAccount ?? null}
-          />
+          <div ref={detailRef} style={{ scrollMarginBottom: 96 }}>
+            <DayDetail
+              date={selected}
+              day={byDate.get(selected)}
+              today={today}
+              split={plan?.routine?.splits.find(sp => sp.date === selected)}
+              billsAccount={plan?.billsAccount ?? null}
+            />
+          </div>
         </div>
         <Text
           style={{ fontSize: 13, color: theme.pageTextSubdued, marginTop: 14 }}
@@ -374,4 +399,13 @@ function DayDetail({
       )}
     </View>
   );
+}
+
+/** A phone-width cell's balance: $812, $2.8k, -$1.2k. */
+function compact(dollars: number) {
+  const a = Math.abs(dollars);
+  const sign = dollars < 0 ? '-' : '';
+  return a < 1000
+    ? `${sign}$${Math.round(a)}`
+    : `${sign}$${(a / 1000).toFixed(a < 10000 ? 1 : 0)}k`;
 }

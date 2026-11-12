@@ -1,4 +1,4 @@
-export { BudgetPage as Budget } from '#components/mobile/budget/BudgetPage';
+export { MobileBudget as Budget } from '#components/custom/MobileBudget';
 
 export { AccountsPage as Accounts } from '#components/mobile/accounts/AccountsPage';
 export { AccountPage as Account } from '#components/mobile/accounts/AccountPage';

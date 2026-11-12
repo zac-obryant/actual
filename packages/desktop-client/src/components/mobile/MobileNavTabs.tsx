@@ -7,12 +7,14 @@ import { animated, config, useSpring } from 'react-spring';
 import { useResponsive } from '@actual-app/components/hooks/useResponsive';
 import {
   SvgAdd,
+  SvgChartArea,
   SvgCog,
   SvgCreditCard,
   SvgPiggyBank,
   SvgReports,
   SvgStoreFront,
   SvgTuning,
+  SvgViewList,
   SvgWallet,
 } from '@actual-app/components/icons/v1';
 import { SvgCalendar3 } from '@actual-app/components/icons/v2';
@@ -92,6 +94,7 @@ export function MobileNavTabs() {
     [api, isTestEnv],
   );
 
+  // fork: same screens as the desktop top nav, most used first (the first row shows when collapsed)
   const navTabs = [
     {
       name: t('Budget'),
@@ -100,28 +103,40 @@ export function MobileNavTabs() {
       Icon: SvgWallet,
     },
     {
-      name: t('Transaction'),
+      name: t('Accounts'),
+      path: '/balances',
+      style: navTabStyle,
+      Icon: SvgPiggyBank,
+    },
+    {
+      name: t('Calendar'),
+      path: '/calendar',
+      style: navTabStyle,
+      Icon: SvgCalendar3,
+    },
+    {
+      name: t('Add'),
       path: '/transactions/new',
       style: navTabStyle,
       Icon: SvgAdd,
     },
     {
-      name: t('Accounts'),
+      name: t('Transactions'),
       path: '/accounts',
       style: navTabStyle,
-      Icon: SvgPiggyBank,
+      Icon: SvgViewList,
+    },
+    {
+      name: t('Forecast'),
+      path: '/forecast',
+      style: navTabStyle,
+      Icon: SvgChartArea,
     },
     {
       name: t('Reports'),
       path: '/reports',
       style: navTabStyle,
       Icon: SvgReports,
-    },
-    {
-      name: t('Schedules'),
-      path: '/schedules',
-      style: navTabStyle,
-      Icon: SvgCalendar3,
     },
     {
       name: t('Payees'),
