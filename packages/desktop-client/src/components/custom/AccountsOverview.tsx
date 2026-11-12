@@ -214,13 +214,30 @@ function AccountTile({
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const balance =
+  const today = monthUtils.currentDay();
+  const total =
     useSheetValue<'account', 'balance'>(bindings.accountBalance(account.id)) ??
     0;
+  // future-dated transactions are planned, not spent: the tile shows what the
+  // bank has today and lists what's coming separately
+  const { data: ahead } = useQuery<{ id: string; amount: number }>(
+    () =>
+      q('transactions')
+        .filter({ account: account.id, date: { $gt: today } })
+        .options({ splits: 'none' })
+        .select(['id', 'amount']),
+    [account.id, today],
+  );
+  const comingUp = (ahead ?? []).reduce((sum, r) => sum + r.amount, 0);
+  const balance = total - comingUp;
   const { data } = useQuery<RecentRow>(
     () =>
       q('transactions')
-        .filter({ account: account.id, is_parent: false })
+        .filter({
+          account: account.id,
+          is_parent: false,
+          date: { $lte: today },
+        })
         .options({ splits: 'inline' })
         .orderBy([{ date: 'desc' }, { sort_order: 'desc' }])
         .limit(3)
@@ -230,7 +247,7 @@ function AccountTile({
           { payeeName: 'payee.name' },
           'imported_payee',
         ]),
-    [account.id],
+    [account.id, today],
   );
   const recent = data ?? [];
   if (!balance && !recent.length) return null;
@@ -274,6 +291,21 @@ function AccountTile({
           {usd(balance / 100, true)}
         </Text>
       </PrivacyFilter>
+      {comingUp !== 0 && (
+        <Text
+          style={{
+            ...styles.tnum,
+            display: 'block',
+            fontSize: 13,
+            color: theme.warningText,
+            margin: '-6px 0 8px',
+          }}
+        >
+          {t('{{amount}} planned after today', {
+            amount: usd(comingUp / 100, true),
+          })}
+        </Text>
+      )}
       {recent.map(r => (
         <View
           key={r.id}
