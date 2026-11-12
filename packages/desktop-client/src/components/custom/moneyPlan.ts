@@ -111,7 +111,13 @@ export async function refreshPlan() {
 // Anything changed here that the plan reads (a transaction added or edited, a
 // budgeted amount, a pay-on date) reruns it a moment later, so the calendar
 // and "to spend" follow along. ponytail: one listener per tab, 2s debounce.
-const PLAN_TABLES = ['transactions', 'zero_budgets', 'notes', 'categories'];
+const PLAN_TABLES = [
+  'transactions',
+  'reflect_budgets',
+  'zero_budgets',
+  'notes',
+  'categories',
+];
 let watching = false;
 function watchForChanges() {
   if (watching) {
