@@ -75,6 +75,8 @@ export type PaydaySplit = {
   /** Bills this paycheck can't cover, taken from what's already in checking. */
   fromChecking: number;
   bills: { name: string; amount: number; on: string; late: boolean }[];
+  /** One-off planned spending (future-dated transactions), paid from checking. */
+  planned?: { name: string; amount: number; on: string }[];
 };
 /** A bill the plan pays: the day it's paid, the day it was due, and whether that's past its grace. */
 export type PlanPayment = {

@@ -219,6 +219,16 @@ export function SpendingMoney({ plan }: { plan: PlanSummary }) {
                 next.fromChecking,
                 null,
               ],
+              ...(next.planned ?? []).map(
+                b =>
+                  [
+                    b.name,
+                    b.amount,
+                    t('Paid from checking on {{date}}', {
+                      date: fmt(b.on, 'MMM d'),
+                    }),
+                  ] as [string, number, string | null],
+              ),
               [t('Move to savings for goals'), next.toSavings, null],
               [
                 t('Extra to {{debt}}', { debt: plan.snowball ?? t('debt') }),
