@@ -41,6 +41,16 @@ export type PlanSummary = {
   payments?: PlanPayment[];
   billsAccount?: string | null;
   snowball?: string | null;
+  /** Cash today less what the plan pays before the next paycheck. */
+  standing?: {
+    cash: number;
+    owed: number;
+    /** What the next paycheck is short of its own bills; it comes out of today's cash. */
+    nextShort: number;
+    free: number;
+    bills: PlanPayment[];
+    next: { date: string; name: string; amount: number };
+  } | null;
   spending?: {
     categories: string[];
     monthly: number;

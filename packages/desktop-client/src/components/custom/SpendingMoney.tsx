@@ -80,7 +80,13 @@ export function SpendingMoney({ plan }: { plan: PlanSummary }) {
   const weekly = (id: string) =>
     ((cells[cell(month, `budget-${id}`)] ?? 0) / 100) * (12 / 52);
 
-  const perWeek = routine?.perWeek ?? spending?.perWeek ?? 0;
+  // a week the bank can't fund only gets what's actually free until the next paycheck
+  const standing = plan.standing;
+  const planned = routine?.perWeek ?? spending?.perWeek ?? 0;
+  const perWeek =
+    standing && weekStart < standing.next.date
+      ? Math.min(planned, spent + Math.max(0, standing.free))
+      : planned;
   const left = perWeek - spent;
   const fmt = (d: string, f: string) => monthUtils.format(d, f, locale);
   const next = routine?.splits.find(s => s.date > today);
@@ -102,15 +108,24 @@ export function SpendingMoney({ plan }: { plan: PlanSummary }) {
             marginTop: 6,
           }}
         >
-          {t(
-            'of {{week}} family spending money this week, {{from}} – {{to}}. A new week starts {{day}}.',
-            {
-              week: usd(perWeek),
-              from: fmt(weekStart, 'MMM d'),
-              to: fmt(weekEnd, 'MMM d'),
-              day: startsOn,
-            },
-          )}
+          {perWeek < planned
+            ? t(
+                'for food and everything else, {{from}} – {{to}}. The usual {{planned}} a week is not in the bank until the paycheck.',
+                {
+                  from: fmt(weekStart, 'MMM d'),
+                  to: fmt(weekEnd, 'MMM d'),
+                  planned: usd(planned),
+                },
+              )
+            : t(
+                'of {{week}} family spending money this week, {{from}} – {{to}}. A new week starts {{day}}.',
+                {
+                  week: usd(perWeek),
+                  from: fmt(weekStart, 'MMM d'),
+                  to: fmt(weekEnd, 'MMM d'),
+                  day: startsOn,
+                },
+              )}
         </Text>
         <Meter
           percent={perWeek ? (spent / perWeek) * 100 : 0}

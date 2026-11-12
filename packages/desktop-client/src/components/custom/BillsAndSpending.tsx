@@ -37,6 +37,7 @@ import {
 } from './primitives';
 import type { Tone } from './primitives';
 import { SpendingMoney } from './SpendingMoney';
+import { WhereYouStand } from './WhereYouStand';
 
 type Row = { id: string; name: string; planned: number; spent: number };
 
@@ -385,6 +386,7 @@ export function BillsAndSpending({ month }: { month: string }) {
     <View style={{ flexShrink: 0 }}>
       {month === thisMonth && plan?.routine ? (
         <>
+          <WhereYouStand plan={plan} />
           <SpendingMoney plan={plan} />
           <Text
             style={{
