@@ -3,7 +3,7 @@
 // accounts overview and the cash calendar all read it from here.
 import { useEffect, useState } from 'react';
 
-import { send } from '@actual-app/core/platform/client/connection';
+import { listen, send } from '@actual-app/core/platform/client/connection';
 
 import { receiptsUrl } from './TopNav';
 
@@ -108,6 +108,28 @@ export async function refreshPlan() {
   window.dispatchEvent(new Event(REFRESHED));
 }
 
+// Anything changed here that the plan reads (a transaction added or edited, a
+// budgeted amount, a pay-on date) reruns it a moment later, so the calendar
+// and "to spend" follow along. ponytail: one listener per tab, 2s debounce.
+const PLAN_TABLES = ['transactions', 'zero_budgets', 'notes', 'categories'];
+let watching = false;
+function watchForChanges() {
+  if (watching) {
+    return;
+  }
+  watching = true;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  listen('sync-event', event => {
+    if (
+      event.type === 'applied' &&
+      event.tables.some(t => PLAN_TABLES.includes(t))
+    ) {
+      clearTimeout(timer);
+      timer = setTimeout(() => void refreshPlan(), 2000);
+    }
+  });
+}
+
 /** Let this signed-in device read the Money Plan: the companion checks the
  *  budget login and remembers the device. True when it worked. */
 export async function connectDevice() {
@@ -132,6 +154,7 @@ export async function connectAndReload() {
 }
 
 export function usePlan() {
+  watchForChanges();
   const [plan, setPlan] = useState<PlanSummary | null | undefined>(undefined);
   const [version, setVersion] = useState(0);
   useEffect(() => {
