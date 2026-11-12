@@ -20,7 +20,7 @@ import { CashLine } from './CashLine';
 import { lowPoint, usd, usePlan } from './moneyPlan';
 import type { PaydaySplit, PlanDay } from './moneyPlan';
 import { HeroNumber, instrumentPage } from './primitives';
-import { SpendingMoney } from './SpendingMoney';
+import { WhereYouStand } from './WhereYouStand';
 
 const WEEKS = 7;
 
@@ -109,11 +109,7 @@ export function CashCalendar() {
           flexShrink: 0,
         }}
       >
-        {plan && (
-          <View style={{ marginBottom: 28 }}>
-            <SpendingMoney plan={plan} compact />
-          </View>
-        )}
+        {plan && <WhereYouStand plan={plan} compact />}
         <Text style={{ ...styles.displayText }}>
           <Trans>Next seven weeks</Trans>
         </Text>
@@ -276,8 +272,7 @@ export function CashCalendar() {
           style={{ fontSize: 13, color: theme.pageTextSubdued, marginTop: 14 }}
         >
           {t(
-            'Green dot: payday. Bar: a bill, longer means bigger. Small number: what all your SoFi accounts together should hold at the end of the day. Moving money between them on payday does not change it; family spending money ({{week}}) comes out once, on the day each week starts, and extra debt payments are not taken out.',
-            { week: usd(plan?.routine?.perWeek ?? 0) },
+            'Green dot: payday. Bar: a bill, longer means bigger. Small number: what all your SoFi accounts together should hold at the end of the day. Moving money between them on payday does not change it. Only bills come out ahead of time: everyday spending comes off when it happens, and extra debt payments are not taken out.',
           )}
         </Text>
       </View>

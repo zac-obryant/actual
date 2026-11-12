@@ -1,5 +1,6 @@
 // Fork: the one answer to "where are we with money?" Cash in the bank today,
-// less everything the plan pays before the next paycheck, is what's free.
+// less the bills before the next paycheck, is what there is to spend until then.
+// It moves with every purchase: spend $150 and it's $150 less.
 import { Trans, useTranslation } from 'react-i18next';
 
 import { styles } from '@actual-app/components/styles';
@@ -14,7 +15,14 @@ import { usd } from './moneyPlan';
 import type { PlanSummary } from './moneyPlan';
 import { HeroNumber } from './primitives';
 
-export function WhereYouStand({ plan }: { plan: PlanSummary }) {
+export function WhereYouStand({
+  plan,
+  compact = false,
+}: {
+  plan: PlanSummary;
+  /** just the number and one line, for the calendar */
+  compact?: boolean;
+}) {
   const { t } = useTranslation();
   const locale = useLocale();
   const s = plan.standing;
@@ -23,6 +31,37 @@ export function WhereYouStand({ plan }: { plan: PlanSummary }) {
   }
   const fmt = (d: string) => monthUtils.format(d, 'EEE, MMM d', locale);
   const short = s.free < 0;
+  const nextSplit = plan.routine?.splits.find(sp => sp.date === s.next.date);
+  const after = plan.routine?.splits.find(sp => sp.date > s.next.date);
+  const hero = (
+    <>
+      <Text style={{ fontSize: 13, color: theme.pageTextSubdued }}>
+        {t('To spend until {{date}}', { date: fmt(s.next.date) })}
+      </Text>
+      <HeroNumber color={short ? theme.errorText : theme.pageText}>
+        {short ? t('{{amount}} short', { amount: usd(-s.free) }) : usd(s.free)}
+      </HeroNumber>
+    </>
+  );
+  if (compact) {
+    return (
+      <View style={{ marginBottom: 28 }}>
+        {hero}
+        <Text
+          style={{
+            ...styles.tnum,
+            fontSize: 15,
+            color: theme.pageTextSubdued,
+            marginTop: 6,
+          }}
+        >
+          {t(
+            'Money in the bank minus the bills before then. The calendar takes out bills only, so what you spend comes off when you spend it.',
+          )}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View
@@ -33,14 +72,7 @@ export function WhereYouStand({ plan }: { plan: PlanSummary }) {
         marginBottom: 24,
       }}
     >
-      <Text style={{ fontSize: 13, color: theme.pageTextSubdued }}>
-        <Trans>Where you stand today</Trans>
-      </Text>
-      <HeroNumber color={short ? theme.errorText : theme.pageText}>
-        {short
-          ? t('{{amount}} short', { amount: usd(-s.free) })
-          : t('{{amount}} free', { amount: usd(s.free) })}
-      </HeroNumber>
+      {hero}
       <Text
         style={{
           ...styles.tnum,
@@ -49,28 +81,26 @@ export function WhereYouStand({ plan }: { plan: PlanSummary }) {
           marginTop: 6,
         }}
       >
-        {t(
-          '{{cash}} in the bank now, minus {{owed}} to pay before the {{date}} paycheck ({{name}} +{{amount}}).',
-          {
-            cash: usd(s.cash),
-            owed: usd(s.owed),
-            date: fmt(s.next.date),
-            name: s.next.name,
-            amount: usd(s.next.amount),
-          },
-        )}{' '}
+        {t('{{cash}} in the bank now, minus {{owed}} of bills before then.', {
+          cash: usd(s.cash),
+          owed: usd(s.owed),
+        })}{' '}
         {s.nextShort > 0
           ? t(
-              'That paycheck is also {{short}} short of its own bills, and that comes out of what you have now too.',
+              'Also minus {{short}}: the bills that paycheck cannot cover by itself.',
               { short: usd(s.nextShort) },
             )
           : null}{' '}
         {short
           ? t(
-              'There is no money for food until then without cutting the family spending money on the {{date}} paycheck by {{amount}}.',
-              { date: fmt(s.next.date), amount: usd(-s.free) },
+              'Something has to wait or move until the paycheck. Tap a bill below to pay it on another day.',
             )
-          : t('What is left is what food and everything else has until then.')}
+          : t(
+              'Every purchase comes off this number. Whatever you do not spend carries into the next stretch.',
+            )}
+        {nextSplit && after && !short
+          ? ` ${t('After the {{date}} paycheck pays its bills, it adds about {{amount}} to spend until {{until}}.', { date: fmt(s.next.date), amount: usd(nextSplit.spending), until: fmt(after.date) })}`
+          : null}
       </Text>
       <View style={{ marginTop: 12 }}>
         {s.bills.map((b, i) => (
