@@ -20,6 +20,7 @@ export type AuthHandlers = {
   'enable-openid': typeof enableOpenId;
   'get-openid-config': typeof getOpenIdConfig;
   'enable-password': typeof enablePassword;
+  'fork-user-token': typeof userToken;
 };
 
 export const app = createApp<AuthHandlers>();
@@ -35,6 +36,12 @@ app.method('subscribe-set-token', setToken);
 app.method('enable-openid', enableOpenId);
 app.method('get-openid-config', getOpenIdConfig);
 app.method('enable-password', enablePassword);
+// Fork: the session token, so the companion on the same box can let a signed-in device in
+app.method('fork-user-token', userToken);
+
+async function userToken() {
+  return (await asyncStorage.getItem('user-token')) ?? null;
+}
 
 async function didBootstrap() {
   return Boolean(await asyncStorage.getItem('did-bootstrap'));

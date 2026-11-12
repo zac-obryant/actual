@@ -108,6 +108,29 @@ export async function refreshPlan() {
   window.dispatchEvent(new Event(REFRESHED));
 }
 
+/** Let this signed-in device read the Money Plan: the companion checks the
+ *  budget login and remembers the device. True when it worked. */
+export async function connectDevice() {
+  const token = await send('fork-user-token');
+  if (!token) {
+    return false;
+  }
+  return fetch(receiptsUrl('/connect'), {
+    method: 'POST',
+    credentials: 'include',
+    body: token,
+  })
+    .then(r => r.ok)
+    .catch(() => false);
+}
+
+/** Connect this device, then every open screen refetches the plan. */
+export async function connectAndReload() {
+  const ok = await connectDevice();
+  window.dispatchEvent(new Event(REFRESHED));
+  return ok;
+}
+
 export function usePlan() {
   const [plan, setPlan] = useState<PlanSummary | null | undefined>(undefined);
   const [version, setVersion] = useState(0);
@@ -118,7 +141,13 @@ export function usePlan() {
   }, []);
   useEffect(() => {
     let live = true;
-    fetch(receiptsUrl('/plan.json'), { credentials: 'include' })
+    const get = () =>
+      fetch(receiptsUrl('/plan.json'), { credentials: 'include' });
+    // a device that was never connected connects itself once, then asks again
+    get()
+      .then(async r =>
+        r.status === 401 && (await connectDevice()) ? get() : r,
+      )
       .then(r => (r.ok ? r.json() : null))
       .then(body => live && setPlan(body))
       .catch(() => live && setPlan(null));

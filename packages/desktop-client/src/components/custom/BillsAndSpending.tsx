@@ -25,6 +25,7 @@ import { css } from '@emotion/css';
 import { useCategories } from '#hooks/useCategories';
 import { useLocale } from '#hooks/useLocale';
 
+import { ConnectDevice } from './ConnectDevice';
 import { cell, useCells } from './EnvelopeRowParts';
 import { refreshPlan, usePlan } from './moneyPlan';
 import type { PlanSummary } from './moneyPlan';
@@ -463,6 +464,7 @@ export function BillsAndSpending({ month }: { month: string }) {
 
   return (
     <View style={{ flexShrink: 0 }}>
+      {plan === null && <ConnectDevice />}
       {month === thisMonth && plan?.routine ? (
         <>
           <WhereYouStand plan={plan} />
