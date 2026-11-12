@@ -5,9 +5,8 @@
 //
 // Planned and spent amounts are live from the budget's spreadsheet. Due days,
 // which categories are bills or everyday, goal and debt balances and projected
-// dates come from the companion's Money Plan (`/plan.json` on the receipts
-// server, same box). Without it the bills and spending still show; the plan
-// sections say why they are empty.
+// dates come from the Money Plan, worked out in the app (moneyPlan.ts). Without
+// it the bills and spending still show; the plan sections say why they are empty.
 import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
@@ -25,7 +24,6 @@ import { css } from '@emotion/css';
 import { useCategories } from '#hooks/useCategories';
 import { useLocale } from '#hooks/useLocale';
 
-import { ConnectDevice } from './ConnectDevice';
 import { cell, useCells } from './EnvelopeRowParts';
 import { refreshPlan, usePlan } from './moneyPlan';
 import type { PlanSummary } from './moneyPlan';
@@ -464,7 +462,6 @@ export function BillsAndSpending({ month }: { month: string }) {
 
   return (
     <View style={{ flexShrink: 0 }}>
-      {plan === null && <ConnectDevice />}
       {month === thisMonth && plan?.routine ? (
         <>
           <WhereYouStand plan={plan} />
@@ -654,8 +651,8 @@ export function BillsAndSpending({ month }: { month: string }) {
             <Text style={{ color: theme.pageTextSubdued }}>
               {plan === null ? (
                 <Trans>
-                  The Money Plan isn't reachable, so everyday categories can't
-                  be picked out yet.
+                  The Money Plan has no settings in this budget yet, so everyday
+                  categories can't be picked out.
                 </Trans>
               ) : (
                 <Trans>
@@ -896,9 +893,8 @@ function PlanCard({
             <Trans>Loading the Money Plan…</Trans>
           ) : (
             <Trans>
-              The Money Plan isn't reachable. It comes from the companion
-              service; open the receipts link once on this device, or check that
-              the companion is running.
+              The Money Plan has no settings in this budget yet. The Pi adds
+              them on its next plan run, at 8am or 5pm.
             </Trans>
           )}
         </Text>

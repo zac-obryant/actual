@@ -13,6 +13,7 @@ import { Text } from '@actual-app/components/text';
 import { theme } from '@actual-app/components/theme';
 import { Tooltip } from '@actual-app/components/tooltip';
 import { View } from '@actual-app/components/view';
+import { send } from '@actual-app/core/platform/client/connection';
 import type { AccountEntity } from '@actual-app/core/types/models';
 import { css } from '@emotion/css';
 
@@ -23,6 +24,24 @@ import { useOffBudgetAccounts } from '#hooks/useOffBudgetAccounts';
 import { useOnBudgetAccounts } from '#hooks/useOnBudgetAccounts';
 import type { Binding } from '#spreadsheet';
 import * as bindings from '#spreadsheet/bindings';
+
+let triedConnect = false;
+
+/** Let this signed-in device into the receipts app on the Pi: it checks the
+ *  budget login and remembers the device. True when it worked. */
+export async function connectDevice() {
+  const token = await send('fork-user-token');
+  if (!token) {
+    return false;
+  }
+  return fetch(receiptsUrl('/connect'), {
+    method: 'POST',
+    credentials: 'include',
+    body: token,
+  })
+    .then(r => r.ok)
+    .catch(() => false);
+}
 
 const TAB = {
   flexShrink: 0,
@@ -178,6 +197,15 @@ function useWaitingReceipts() {
     let live = true;
     const ask = () =>
       fetch(receiptsUrl('/count'), { credentials: 'include' })
+        // a device never let into the receipts app lets itself in, once per page load
+        .then(async r =>
+          r.status === 401 &&
+          !triedConnect &&
+          (triedConnect = true) &&
+          (await connectDevice())
+            ? fetch(receiptsUrl('/count'), { credentials: 'include' })
+            : r,
+        )
         .then(r => (r.ok ? r.json() : null))
         .then(body => {
           if (live) {

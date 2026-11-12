@@ -135,7 +135,7 @@ export function CashCalendar() {
             t('Loading the Money Plan…')
           ) : (
             t(
-              "The Money Plan isn't reachable, so there's no projection. Open the receipts link once on this device, or check that the companion is running.",
+              "The Money Plan has no settings in this budget yet, so there's no projection. The Pi adds them on its next plan run, at 8am or 5pm.",
             )
           )}
         </Text>
