@@ -26,7 +26,7 @@ import { useCategories } from '#hooks/useCategories';
 import { useLocale } from '#hooks/useLocale';
 
 import { cell, useCells } from './EnvelopeRowParts';
-import { usePlan } from './moneyPlan';
+import { refreshPlan, usePlan } from './moneyPlan';
 import type { PlanSummary } from './moneyPlan';
 import {
   Direction,
@@ -225,6 +225,85 @@ function PlannedAmount({
       }}
     >
       {children}
+    </Button>
+  );
+}
+
+/** The bill's status chip; tap it to pick the day it gets paid this month (or go back to its due date). */
+function PayOnDate({
+  month,
+  row,
+  on,
+  children,
+}: {
+  month: string;
+  row: Row;
+  on: string | undefined;
+  children: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const save = async (date: string) => {
+    setEditing(false);
+    setSaving(true);
+    // read by the companion's plan job: hidden note, one per bill per month
+    await send('notes-save', {
+      id: `fork-payon:${row.id}:${month}`,
+      note: date,
+    });
+    await refreshPlan();
+    setSaving(false);
+  };
+  if (editing) {
+    return (
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <input
+          type="date"
+          aria-label={t('Day to pay {{name}}', { name: row.name })}
+          defaultValue={on}
+          min={`${month}-01`}
+          onChange={e => {
+            if (e.currentTarget.value) void save(e.currentTarget.value);
+          }}
+          onKeyDown={e => {
+            if (e.key === 'Escape') setEditing(false);
+          }}
+          style={{
+            ...styles.tnum,
+            font: 'inherit',
+            fontSize: 13,
+            padding: '3px 8px',
+            borderRadius: 8,
+            border: `1px solid ${theme.formInputBorder}`,
+            backgroundColor: theme.formInputBackground,
+            color: theme.formInputText,
+          }}
+        />
+        <Button variant="bare" onPress={() => void save('')}>
+          <Trans>Pay on due date</Trans>
+        </Button>
+        <Button variant="bare" onPress={() => setEditing(false)}>
+          <Trans>Cancel</Trans>
+        </Button>
+      </View>
+    );
+  }
+  return (
+    <Button
+      variant="bare"
+      aria-label={t('Change the day {{name}} gets paid', { name: row.name })}
+      onPress={() => setEditing(true)}
+      isDisabled={saving}
+      style={{ padding: 0, borderRadius: 999 }}
+    >
+      {saving ? (
+        <StatusChip tone="neutral">
+          <Trans>Updating the plan…</Trans>
+        </StatusChip>
+      ) : (
+        children
+      )}
     </Button>
   );
 }
@@ -503,7 +582,22 @@ export function BillsAndSpending({ month }: { month: string }) {
                     <Text style={{ fontSize: 15, fontWeight: 500 }}>
                       {r.name}
                     </Text>
-                    <StatusChip tone={s.tone}>{s.label}</StatusChip>
+                    {isPaid(r) ? (
+                      <StatusChip tone={s.tone}>{s.label}</StatusChip>
+                    ) : (
+                      <PayOnDate
+                        month={month}
+                        row={r}
+                        on={
+                          plan?.payments?.find(
+                            p =>
+                              p.name === r.name && p.due.slice(0, 7) === month,
+                          )?.on
+                        }
+                      >
+                        <StatusChip tone={s.tone}>{s.label}</StatusChip>
+                      </PayOnDate>
+                    )}
                   </View>
                   <Text
                     style={{

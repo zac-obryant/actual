@@ -3,6 +3,8 @@
 // accounts overview and the cash calendar all read it from here.
 import { useEffect, useState } from 'react';
 
+import { send } from '@actual-app/core/platform/client/connection';
+
 import { receiptsUrl } from './TopNav';
 
 export type PlanGoal = {
@@ -94,8 +96,26 @@ export type PaydayRoutine = {
 };
 
 /** `undefined` while asking, `null` when the plan can't be reached. */
+const REFRESHED = 'fork-plan-refreshed';
+
+/** Rerun the Money Plan now (after a change it reads), then every open screen refetches it. */
+export async function refreshPlan() {
+  await send('sync'); // the companion reads the server copy, so get the change there first
+  await fetch(receiptsUrl('/plan/refresh'), {
+    method: 'POST',
+    credentials: 'include',
+  }).catch(() => null);
+  window.dispatchEvent(new Event(REFRESHED));
+}
+
 export function usePlan() {
   const [plan, setPlan] = useState<PlanSummary | null | undefined>(undefined);
+  const [version, setVersion] = useState(0);
+  useEffect(() => {
+    const bump = () => setVersion(v => v + 1);
+    window.addEventListener(REFRESHED, bump);
+    return () => window.removeEventListener(REFRESHED, bump);
+  }, []);
   useEffect(() => {
     let live = true;
     fetch(receiptsUrl('/plan.json'), { credentials: 'include' })
@@ -105,7 +125,7 @@ export function usePlan() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [version]);
   return plan;
 }
 
