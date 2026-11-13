@@ -19,7 +19,7 @@ import { Page } from '#components/Page';
 import { useOffBudgetAccounts } from '#hooks/useOffBudgetAccounts';
 import { useQuery } from '#hooks/useQuery';
 
-import { portfolio } from './iraMath';
+import { isIra, portfolio } from './iraMath';
 import type { Fund, Holdings, Range } from './iraMath';
 import {
   Delta,
@@ -67,7 +67,7 @@ function timeLabel(epochSeconds: number) {
 function useIraAccount(): AccountEntity | undefined {
   const { data: offBudget = [] } = useOffBudgetAccounts();
   // ponytail: one IRA; a picker when there is a second investment account
-  return offBudget.find(a => /\bira\b/i.test(a.name) && a.account_id);
+  return offBudget.find(isIra);
 }
 
 type Load =

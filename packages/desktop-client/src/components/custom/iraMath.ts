@@ -25,6 +25,15 @@ export type Holdings = {
   >;
 };
 
+/** The off-budget, bank-linked account that holds the IRA. */
+export function isIra(a: {
+  name: string;
+  offbudget?: boolean | number;
+  account_id?: string | null;
+}) {
+  return Boolean(a.offbudget && a.account_id && /\bira\b/i.test(a.name));
+}
+
 export type Range = '1W' | '1M' | '3M' | 'YTD' | '1Y';
 
 export type Fund = Holding & {

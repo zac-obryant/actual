@@ -25,6 +25,7 @@ import * as bindings from '#spreadsheet/bindings';
 
 import { CashLine } from './CashLine';
 import { CheckIn, useWaiting } from './CheckIn';
+import { isIra } from './iraMath';
 import { lowPoint, usd, usePlan } from './moneyPlan';
 import { HeroNumber } from './primitives';
 
@@ -255,7 +256,10 @@ function AccountTile({
   return (
     <button
       type="button"
-      onClick={() => navigate(`/accounts/${account.id}`)}
+      // the IRA opens its own page: funds, gains and history, not a register
+      onClick={() =>
+        navigate(isIra(account) ? '/retirement' : `/accounts/${account.id}`)
+      }
       className={css({
         all: 'unset',
         cursor: 'pointer',
