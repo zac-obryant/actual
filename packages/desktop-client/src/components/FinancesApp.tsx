@@ -28,6 +28,7 @@ import { ContextMenu } from './ContextMenu';
 import { BalancesPage } from './custom/BalancesPage';
 import { CashCalendar } from './custom/CashCalendar';
 import { ForecastPage } from './custom/ForecastPage';
+import { RetirementPage } from './custom/RetirementPage';
 import { TopNav } from './custom/TopNav';
 import { EnableBankingCallback } from './EnableBankingCallback';
 import { FeatureErrorFallback } from './FeatureErrorFallback';
@@ -264,6 +265,7 @@ export function FinancesApp() {
                     <Route path="/balances" element={<BalancesPage />} />
                     <Route path="/calendar" element={<CashCalendar />} />
                     <Route path="/forecast" element={<ForecastPage />} />
+                    <Route path="/retirement" element={<RetirementPage />} />
 
                     <Route
                       path="/budget"

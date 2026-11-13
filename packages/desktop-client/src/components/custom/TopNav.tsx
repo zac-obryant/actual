@@ -324,6 +324,9 @@ export function TopNav() {
           <Tab to="/forecast">
             <Trans>Forecast</Trans>
           </Tab>
+          <Tab to="/retirement">
+            <Trans>Retirement</Trans>
+          </Tab>
           <Tab to="/settings">
             <Trans>Settings</Trans>
           </Tab>

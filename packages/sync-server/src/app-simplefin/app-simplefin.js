@@ -87,6 +87,109 @@ app.post(
   }),
 );
 
+// fork: an investment account's funds, and a year of daily closes for each.
+// SimpleFIN allows ~24 requests a day, so holdings are kept for hours; prices
+// come from Yahoo's public chart API and are kept for minutes.
+// ponytail: in-memory caches, lost on restart; that costs one request
+const holdingsCache = new Map();
+const pricesCache = new Map();
+const HOLDINGS_TTL = 6 * 3600_000;
+const PRICES_TTL = 10 * 60_000;
+
+async function yearOfCloses(symbol) {
+  const hit = pricesCache.get(symbol);
+  if (hit && Date.now() - hit.at < PRICES_TTL) return hit.data;
+  const r = await fetch(
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=1y&interval=1d`,
+    { headers: { 'User-Agent': 'Mozilla/5.0' } },
+  );
+  if (!r.ok) throw new Error(`prices ${symbol}: ${r.status}`);
+  const result = (await r.json()).chart?.result?.[0];
+  const closes = result?.indicators?.quote?.[0]?.close ?? [];
+  const offset = result?.meta?.gmtoffset ?? 0;
+  const days = (result?.timestamp ?? [])
+    .map((t, i) => [
+      new Date((t + offset) * 1000).toISOString().slice(0, 10),
+      closes[i],
+    ])
+    .filter(([, c]) => typeof c === 'number');
+  const data = { days, asOf: result?.meta?.regularMarketTime ?? null };
+  pricesCache.set(symbol, { at: Date.now(), data });
+  return data;
+}
+
+app.post(
+  '/holdings',
+  handleError(async (req, res) => {
+    const { accountId } = req.body || {};
+    const accessKey = secretsService.get(SecretName.simplefin_accessKey);
+    if (isInvalidAccessKey(accessKey) || typeof accountId !== 'string') {
+      invalidToken(res);
+      return;
+    }
+
+    let hit = holdingsCache.get(accountId);
+    if (!hit || Date.now() - hit.at > HOLDINGS_TTL) {
+      try {
+        const result = await getAccounts(
+          accessKey,
+          [accountId],
+          // whole seconds: SimpleFIN rejects a fractional start-date
+          new Date(Math.floor(Date.now() / 86400_000 - 1) * 86400_000),
+          null,
+        );
+        const account = result.accounts?.find(a => a.id === accountId);
+        if (!account) {
+          throw new Error(
+            `SimpleFIN did not return the account: ${result.sferrors ?? ''}`,
+          );
+        }
+        hit = {
+          at: Date.now(),
+          account: {
+            balance: Number(account.balance),
+            balanceDate: account['balance-date'],
+            holdings: (account.holdings ?? []).map(h => ({
+              symbol: h.symbol,
+              name: h.description,
+              shares: Number(h.shares),
+              avgCost: Number(h.purchase_price),
+              value: Number(h.market_value),
+            })),
+          },
+        };
+        holdingsCache.set(accountId, hit);
+      } catch (e) {
+        if (!hit) {
+          serverDown(e, res);
+          return;
+        }
+        // keep showing the last holdings we had
+      }
+    }
+
+    const account = hit.account;
+    const prices = {};
+    if (account) {
+      await Promise.all(
+        account.holdings
+          // a money-market fund is priced at $1; there is nothing to chart
+          .filter(h => Math.abs(h.value - h.shares) > 0.01)
+          .map(h =>
+            yearOfCloses(h.symbol)
+              .then(p => (prices[h.symbol] = p))
+              .catch(e => console.log(e.message)),
+          ),
+      );
+    }
+
+    res.send({
+      status: 'ok',
+      data: account ? { ...account, fetchedAt: hit.at, prices } : null,
+    });
+  }),
+);
+
 app.post(
   '/transactions',
   handleError(async (req, res) => {

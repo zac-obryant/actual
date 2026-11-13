@@ -10,6 +10,7 @@ import {
   SvgChartArea,
   SvgCog,
   SvgCreditCard,
+  SvgMoneyBag,
   SvgPiggyBank,
   SvgReports,
   SvgStoreFront,
@@ -131,6 +132,12 @@ export function MobileNavTabs() {
       path: '/forecast',
       style: navTabStyle,
       Icon: SvgChartArea,
+    },
+    {
+      name: t('Retirement'),
+      path: '/retirement',
+      style: navTabStyle,
+      Icon: SvgMoneyBag,
     },
     {
       name: t('Reports'),
